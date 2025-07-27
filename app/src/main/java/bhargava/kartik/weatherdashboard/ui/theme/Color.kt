@@ -1,4 +1,3 @@
-// Update: ui/theme/Color.kt
 package bhargava.kartik.weatherdashboard.ui.theme
 
 import androidx.compose.ui.graphics.Color

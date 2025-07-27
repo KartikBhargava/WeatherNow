@@ -1,4 +1,3 @@
-// Update: MainActivity.kt
 package bhargava.kartik.weatherdashboard
 
 import android.os.Bundle
@@ -6,20 +5,21 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -28,6 +28,7 @@ import bhargava.kartik.weatherdashboard.presentation.navigation.WeatherDestinati
 import bhargava.kartik.weatherdashboard.presentation.navigation.WeatherNavigation
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.SettingsViewModel
 import bhargava.kartik.weatherdashboard.ui.theme.WeatherDashboardTheme
+import bhargava.kartik.weatherdashboard.utils.ThemeUtils
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -42,7 +43,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Get settings at the top level to apply theme changes
             val settingsViewModel: SettingsViewModel = hiltViewModel()
-            val settingsState by settingsViewModel.uiState.collectAsState()
+            val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
             WeatherDashboardTheme(
                 darkTheme = settingsState.darkModeEnabled,
@@ -62,7 +63,8 @@ fun WeatherDashboardApp() {
 
     // Get settings at the app level to ensure they're shared
     val settingsViewModel: SettingsViewModel = hiltViewModel()
-    val settingsState by settingsViewModel.uiState.collectAsState()
+    val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+    val isDarkMode = settingsState.darkModeEnabled
 
     val navigationItems = listOf(
         WeatherDestination.Home,
@@ -74,81 +76,105 @@ fun WeatherDashboardApp() {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            // Glass-style bottom navigation
-            NavigationBar(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF667eea).copy(alpha = 0.9f),
-                                Color(0xFF764ba2).copy(alpha = 0.9f)
-                            )
-                        )
-                    ),
-                containerColor = Color.Transparent,
-                contentColor = Color.White
+            // Clean, minimal bottom navigation with dark mode support
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = ThemeUtils.getNavigationBackground(isDarkMode),
+                shadowElevation = 0.dp
             ) {
-                navigationItems.forEach { destination ->
-                    val isSelected = currentDestination?.hierarchy?.any {
-                        it.route == destination.route
-                    } == true
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp, horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    navigationItems.forEach { destination ->
+                        val isSelected = currentDestination?.hierarchy?.any {
+                            it.route == destination.route
+                        } == true
 
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                destination.icon,
-                                contentDescription = destination.title,
-                                tint = if (isSelected) Color.White else Color.White.copy(alpha = 0.6f)
-                            )
-                        },
-                        label = {
-                            Text(
-                                destination.title,
-                                color = if (isSelected) Color.White else Color.White.copy(alpha = 0.6f)
-                            )
-                        },
-                        selected = isSelected,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                        NavigationItem(
+                            destination = destination,
+                            isSelected = isSelected,
+                            isDarkMode = isDarkMode,
+                            onClick = {
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color.White,
-                            selectedTextColor = Color.White,
-                            unselectedIconColor = Color.White.copy(alpha = 0.6f),
-                            unselectedTextColor = Color.White.copy(alpha = 0.6f),
-                            indicatorColor = Color.White.copy(alpha = 0.15f)
                         )
-                    )
+                    }
                 }
             }
         },
         containerColor = Color.Transparent
     ) { innerPadding ->
-        Surface(
+        // Dynamic background based on dark mode
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .background(
                     brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF667eea),
-                            Color(0xFF764ba2)
-                        )
+                        colors = ThemeUtils.getBackgroundGradient(isDarkMode)
                     )
-                ),
-            color = Color.Transparent
+                )
         ) {
             WeatherNavigation(
                 navController = navController,
-                settingsViewModel = settingsViewModel
+                settingsViewModel = settingsViewModel,
+                modifier = Modifier.padding(innerPadding)
+            )
+        }
+    }
+}
+
+@Composable
+fun NavigationItem(
+    destination: WeatherDestination,
+    isSelected: Boolean,
+    isDarkMode: Boolean,
+    onClick: () -> Unit
+) {
+    // Adjust colors based on theme
+    val selectedColor = ThemeUtils.getTextPrimary(isDarkMode)
+    val unselectedColor = ThemeUtils.getTextTertiary(isDarkMode)
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) { onClick() }
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Icon(
+            destination.icon,
+            contentDescription = destination.title,
+            tint = if (isSelected) selectedColor else unselectedColor,
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = destination.title,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (isSelected) selectedColor else unselectedColor,
+            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+        )
+
+        // Active indicator dot
+        if (isSelected) {
+            Spacer(modifier = Modifier.height(3.dp))
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .background(selectedColor, CircleShape)
             )
         }
     }

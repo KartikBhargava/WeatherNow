@@ -1,4 +1,3 @@
-// Create: data/preferences/SettingsProvider.kt
 package bhargava.kartik.weatherdashboard.data.preferences
 
 import android.content.Context

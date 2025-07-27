@@ -1,5 +1,4 @@
-// Update: presentation/screens/home/HomeScreen.kt (or current/HomeScreen.kt)
-package bhargava.kartik.weatherdashboard.presentation.screens.home
+package bhargava.kartik.weatherdashboard.presentation.screens.current
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -21,11 +21,16 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bhargava.kartik.weatherdashboard.domain.model.Weather
+import bhargava.kartik.weatherdashboard.presentation.viewmodel.SettingsViewModel
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.TemperatureUnit
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.WeatherViewModel
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.WindSpeedUnit
+import bhargava.kartik.weatherdashboard.utils.ThemeUtils
 import bhargava.kartik.weatherdashboard.utils.formatTemperature
 import bhargava.kartik.weatherdashboard.utils.formatWindSpeed
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -35,15 +40,17 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Get dark mode state
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+    val isDarkMode = settingsState.darkModeEnabled
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF667eea),
-                        Color(0xFF764ba2)
-                    )
+                    colors = ThemeUtils.getBackgroundGradient(isDarkMode)
                 )
             )
     ) {
@@ -64,12 +71,12 @@ fun HomeScreen(
                         text = "Current Weather",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = ThemeUtils.getTextPrimary(isDarkMode)
                     )
                     Text(
                         text = uiState.weather?.locationName ?: "Loading...",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = ThemeUtils.getTextSecondary(isDarkMode)
                     )
                 }
 
@@ -78,14 +85,14 @@ fun HomeScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .background(
-                            Color.White.copy(alpha = 0.15f),
+                            ThemeUtils.getControlBackground(isDarkMode),
                             RoundedCornerShape(12.dp)
                         )
                 ) {
                     Icon(
                         Icons.Default.Refresh,
                         contentDescription = "Refresh weather",
-                        tint = Color.White,
+                        tint = ThemeUtils.getTextPrimary(isDarkMode),
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -95,11 +102,12 @@ fun HomeScreen(
 
             when {
                 uiState.isLoading -> {
-                    LoadingContent()
+                    LoadingContent(isDarkMode)
                 }
                 uiState.errorMessage != null -> {
                     ErrorContent(
                         message = uiState.errorMessage!!,
+                        isDarkMode = isDarkMode,
                         onRetryClick = { viewModel.refreshWeather() }
                     )
                 }
@@ -107,7 +115,8 @@ fun HomeScreen(
                     WeatherContent(
                         weather = uiState.weather!!,
                         temperatureUnit = temperatureUnit,
-                        windSpeedUnit = windSpeedUnit
+                        windSpeedUnit = windSpeedUnit,
+                        isDarkMode = isDarkMode
                     )
                 }
             }
@@ -116,12 +125,12 @@ fun HomeScreen(
 }
 
 @Composable
-fun LoadingContent() {
+fun LoadingContent(isDarkMode: Boolean) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.15f)
+            containerColor = ThemeUtils.getCardBackground(isDarkMode)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -135,13 +144,13 @@ fun LoadingContent() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 CircularProgressIndicator(
-                    color = Color.White,
+                    color = ThemeUtils.getTextPrimary(isDarkMode),
                     strokeWidth = 3.dp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Loading weather data...",
-                    color = Color.White.copy(alpha = 0.8f),
+                    color = ThemeUtils.getTextSecondary(isDarkMode),
                     fontSize = 16.sp
                 )
             }
@@ -152,13 +161,14 @@ fun LoadingContent() {
 @Composable
 fun ErrorContent(
     message: String,
+    isDarkMode: Boolean,
     onRetryClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.15f)
+            containerColor = ThemeUtils.getCardBackground(isDarkMode)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -176,7 +186,7 @@ fun ErrorContent(
             Text(
                 text = "Weather Unavailable",
                 style = MaterialTheme.typography.titleLarge,
-                color = Color.White,
+                color = ThemeUtils.getTextPrimary(isDarkMode),
                 fontWeight = FontWeight.Bold
             )
 
@@ -185,7 +195,7 @@ fun ErrorContent(
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.8f)
+                color = ThemeUtils.getTextSecondary(isDarkMode)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -193,11 +203,11 @@ fun ErrorContent(
             Button(
                 onClick = onRetryClick,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.2f)
+                    containerColor = ThemeUtils.getControlBackgroundPressed(isDarkMode)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Retry", color = Color.White)
+                Text("Retry", color = ThemeUtils.getTextPrimary(isDarkMode))
             }
         }
     }
@@ -207,7 +217,8 @@ fun ErrorContent(
 fun WeatherContent(
     weather: Weather,
     temperatureUnit: TemperatureUnit,
-    windSpeedUnit: WindSpeedUnit
+    windSpeedUnit: WindSpeedUnit,
+    isDarkMode: Boolean
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -215,31 +226,37 @@ fun WeatherContent(
         // Main weather card
         MainWeatherCard(
             weather = weather,
-            temperatureUnit = temperatureUnit
+            temperatureUnit = temperatureUnit,
+            isDarkMode = isDarkMode
         )
 
         // Weather details grid
         WeatherDetailsGrid(
             weather = weather,
             temperatureUnit = temperatureUnit,
-            windSpeedUnit = windSpeedUnit
+            windSpeedUnit = windSpeedUnit,
+            isDarkMode = isDarkMode
         )
 
         // Additional info card
-        AdditionalInfoCard(weather = weather)
+        AdditionalInfoCard(
+            weather = weather,
+            isDarkMode = isDarkMode
+        )
     }
 }
 
 @Composable
 fun MainWeatherCard(
     weather: Weather,
-    temperatureUnit: TemperatureUnit
+    temperatureUnit: TemperatureUnit,
+    isDarkMode: Boolean
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(25.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.15f)
+            containerColor = ThemeUtils.getCardBackground(isDarkMode)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -258,14 +275,14 @@ fun MainWeatherCard(
                 text = weather.temperature.formatTemperature(temperatureUnit),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = ThemeUtils.getTextPrimary(isDarkMode),
                 fontSize = 48.sp
             )
 
             Text(
                 text = weather.description.replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White.copy(alpha = 0.8f)
+                color = ThemeUtils.getTextSecondary(isDarkMode)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -273,7 +290,7 @@ fun MainWeatherCard(
             Text(
                 text = "Feels like ${weather.feelsLike.formatTemperature(temperatureUnit)}",
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.7f)
+                color = ThemeUtils.getTextTertiary(isDarkMode)
             )
         }
     }
@@ -283,7 +300,8 @@ fun MainWeatherCard(
 fun WeatherDetailsGrid(
     weather: Weather,
     temperatureUnit: TemperatureUnit,
-    windSpeedUnit: WindSpeedUnit
+    windSpeedUnit: WindSpeedUnit,
+    isDarkMode: Boolean
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -297,13 +315,15 @@ fun WeatherDetailsGrid(
             WeatherDetailCard(
                 icon = Icons.Default.Air,
                 title = "Wind",
-                value = weather.windSpeed.formatWindSpeed(windSpeedUnit)
+                value = weather.windSpeed.formatWindSpeed(windSpeedUnit),
+                isDarkMode = isDarkMode
             )
 
             WeatherDetailCard(
                 icon = Icons.Default.WaterDrop,
                 title = "Humidity",
-                value = "${weather.humidity}%"
+                value = "${weather.humidity}%",
+                isDarkMode = isDarkMode
             )
         }
 
@@ -315,13 +335,15 @@ fun WeatherDetailsGrid(
             WeatherDetailCard(
                 icon = Icons.Default.Speed,
                 title = "Pressure",
-                value = "${weather.pressure.toInt()} hPa"
+                value = "${weather.pressure.toInt()} hPa",
+                isDarkMode = isDarkMode
             )
 
             WeatherDetailCard(
                 icon = Icons.Default.WbSunny,
                 title = "Feels Like",
-                value = weather.feelsLike.formatTemperature(temperatureUnit)
+                value = weather.feelsLike.formatTemperature(temperatureUnit),
+                isDarkMode = isDarkMode
             )
         }
     }
@@ -329,15 +351,16 @@ fun WeatherDetailsGrid(
 
 @Composable
 fun WeatherDetailCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
-    value: String
+    value: String,
+    isDarkMode: Boolean
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.15f)
+            containerColor = ThemeUtils.getCardBackground(isDarkMode)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -348,7 +371,7 @@ fun WeatherDetailCard(
             Icon(
                 icon,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.8f),
+                tint = ThemeUtils.getTextSecondary(isDarkMode),
                 modifier = Modifier.size(24.dp)
             )
 
@@ -357,26 +380,29 @@ fun WeatherDetailCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.7f)
+                color = ThemeUtils.getTextTertiary(isDarkMode)
             )
 
             Text(
                 text = value,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = ThemeUtils.getTextPrimary(isDarkMode)
             )
         }
     }
 }
 
 @Composable
-fun AdditionalInfoCard(weather: Weather) {
+fun AdditionalInfoCard(
+    weather: Weather,
+    isDarkMode: Boolean
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.15f)
+            containerColor = ThemeUtils.getCardBackground(isDarkMode)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -392,13 +418,13 @@ fun AdditionalInfoCard(weather: Weather) {
                 Text(
                     text = "Icon Code",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = ThemeUtils.getTextTertiary(isDarkMode)
                 )
                 Text(
                     text = weather.iconCode,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = ThemeUtils.getTextPrimary(isDarkMode)
                 )
             }
 
@@ -408,12 +434,12 @@ fun AdditionalInfoCard(weather: Weather) {
                 Text(
                     text = "Updated",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = ThemeUtils.getTextTertiary(isDarkMode)
                 )
                 Text(
                     text = formatTimestamp(weather.timestamp),
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White
+                    color = ThemeUtils.getTextPrimary(isDarkMode)
                 )
             }
         }
@@ -445,8 +471,8 @@ private fun formatTimestamp(timestamp: Long): String {
         minutes < 60 -> "${minutes}m ago"
         hours < 24 -> "${hours}h ago"
         else -> {
-            val date = java.util.Date(timestamp)
-            val formatter = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+            val date = Date(timestamp)
+            val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
             formatter.format(date)
         }
     }

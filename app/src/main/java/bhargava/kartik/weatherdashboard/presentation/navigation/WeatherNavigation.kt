@@ -1,14 +1,14 @@
-// Update: presentation/navigation/WeatherNavigation.kt
 package bhargava.kartik.weatherdashboard.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import bhargava.kartik.weatherdashboard.presentation.screens.forecast.ForecastScreen
-import bhargava.kartik.weatherdashboard.presentation.screens.home.HomeScreen
+import bhargava.kartik.weatherdashboard.presentation.screens.current.HomeScreen
 import bhargava.kartik.weatherdashboard.presentation.screens.locations.LocationsScreen
 import bhargava.kartik.weatherdashboard.presentation.screens.settings.SettingsScreen
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.SettingsViewModel
@@ -16,13 +16,15 @@ import bhargava.kartik.weatherdashboard.presentation.viewmodel.SettingsViewModel
 @Composable
 fun WeatherNavigation(
     navController: NavHostController,
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    modifier: Modifier = Modifier
 ) {
     val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
 
     NavHost(
         navController = navController,
-        startDestination = WeatherDestination.Home.route
+        startDestination = WeatherDestination.Home.route,
+        modifier = modifier
     ) {
         composable(WeatherDestination.Home.route) {
             HomeScreen(

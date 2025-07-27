@@ -207,6 +207,9 @@ dependencies {
     // Play Store optimization
     implementation("androidx.profileinstaller:profileinstaller:1.3.1")
 
+    //location
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

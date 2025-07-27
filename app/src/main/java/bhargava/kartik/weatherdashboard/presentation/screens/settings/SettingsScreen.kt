@@ -1,4 +1,3 @@
-// Update: presentation/screens/settings/SettingsScreen.kt
 package bhargava.kartik.weatherdashboard.presentation.screens.settings
 
 import androidx.compose.foundation.background
@@ -21,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.SettingsViewModel
+import bhargava.kartik.weatherdashboard.utils.ThemeUtils
 
 @Composable
 fun SettingsScreen(
@@ -28,15 +28,15 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Use the current dark mode state
+    val isDarkMode = uiState.darkModeEnabled
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF667eea),
-                        Color(0xFF764ba2)
-                    )
+                    colors = ThemeUtils.getBackgroundGradient(isDarkMode)
                 )
             )
     ) {
@@ -51,19 +51,23 @@ fun SettingsScreen(
                 text = "Settings",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = ThemeUtils.getTextPrimary(isDarkMode),
                 modifier = Modifier.padding(bottom = 24.dp)
             )
 
             // Units Section
-            SettingsSection(title = "Units") {
+            SettingsSection(
+                title = "Units",
+                isDarkMode = isDarkMode
+            ) {
                 SettingsDropdownItem(
                     title = "Temperature",
                     subtitle = "Choose temperature unit",
                     selectedValue = uiState.temperatureUnit.displayName,
                     options = viewModel.getTemperatureUnitOptions(),
                     onValueChange = { viewModel.updateTemperatureUnitByName(it) },
-                    icon = Icons.Default.Thermostat
+                    icon = Icons.Default.Thermostat,
+                    isDarkMode = isDarkMode
                 )
 
                 SettingsDropdownItem(
@@ -72,57 +76,74 @@ fun SettingsScreen(
                     selectedValue = uiState.windSpeedUnit.displayName,
                     options = viewModel.getWindSpeedUnitOptions(),
                     onValueChange = { viewModel.updateWindSpeedUnitByName(it) },
-                    icon = Icons.Default.Air
+                    icon = Icons.Default.Air,
+                    isDarkMode = isDarkMode
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Notifications Section
-            SettingsSection(title = "Notifications") {
+            SettingsSection(
+                title = "Notifications",
+                isDarkMode = isDarkMode
+            ) {
                 SettingsSwitchItem(
                     title = "Weather Alerts",
                     subtitle = "Get notified about weather changes",
                     checked = uiState.notificationsEnabled,
                     onCheckedChange = { viewModel.toggleNotifications(it) },
-                    icon = Icons.Default.Notifications
+                    icon = Icons.Default.Notifications,
+                    isDarkMode = isDarkMode
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Privacy Section
-            SettingsSection(title = "Privacy") {
+            SettingsSection(
+                title = "Privacy",
+                isDarkMode = isDarkMode
+            ) {
                 SettingsSwitchItem(
                     title = "Location Access",
                     subtitle = "Allow app to access your location",
                     checked = uiState.locationEnabled,
                     onCheckedChange = { viewModel.toggleLocationAccess(it) },
-                    icon = Icons.Default.LocationOn
+                    icon = Icons.Default.LocationOn,
+                    isDarkMode = isDarkMode
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Appearance Section
-            SettingsSection(title = "Appearance") {
+            SettingsSection(
+                title = "Appearance",
+                isDarkMode = isDarkMode
+            ) {
                 SettingsSwitchItem(
                     title = "Dark Mode",
                     subtitle = "Use dark theme",
                     checked = uiState.darkModeEnabled,
                     onCheckedChange = { viewModel.toggleDarkMode(it) },
-                    icon = Icons.Default.DarkMode
+                    icon = Icons.Default.DarkMode,
+                    isDarkMode = isDarkMode
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Data Section
-            SettingsSection(title = "Data") {
+            SettingsSection(
+                title = "Data",
+                isDarkMode = isDarkMode
+            ) {
                 SettingsClickableItem(
                     title = "Reset All Settings",
                     subtitle = "Restore default settings",
                     icon = Icons.Default.Restore,
+                    isDarkMode = isDarkMode,
                     onClick = { viewModel.showResetDialog() }
                 )
             }
@@ -130,11 +151,15 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // About Section
-            SettingsSection(title = "About") {
+            SettingsSection(
+                title = "About",
+                isDarkMode = isDarkMode
+            ) {
                 SettingsClickableItem(
                     title = "App Version",
                     subtitle = uiState.appVersion,
                     icon = Icons.Default.Info,
+                    isDarkMode = isDarkMode,
                     onClick = { }
                 )
 
@@ -142,6 +167,7 @@ fun SettingsScreen(
                     title = "Privacy Policy",
                     subtitle = "View our privacy policy",
                     icon = Icons.Default.PrivacyTip,
+                    isDarkMode = isDarkMode,
                     onClick = { /* TODO: Open privacy policy */ }
                 )
 
@@ -149,6 +175,7 @@ fun SettingsScreen(
                     title = "Terms of Service",
                     subtitle = "View terms and conditions",
                     icon = Icons.Default.Description,
+                    isDarkMode = isDarkMode,
                     onClick = { /* TODO: Open terms */ }
                 )
 
@@ -156,6 +183,7 @@ fun SettingsScreen(
                     title = "Rate App",
                     subtitle = "Rate us on Play Store",
                     icon = Icons.Default.Star,
+                    isDarkMode = isDarkMode,
                     onClick = { /* TODO: Open Play Store rating */ }
                 )
             }
@@ -194,6 +222,7 @@ fun SettingsScreen(
 @Composable
 fun SettingsSection(
     title: String,
+    isDarkMode: Boolean,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column {
@@ -201,7 +230,7 @@ fun SettingsSection(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = ThemeUtils.getTextPrimary(isDarkMode),
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
@@ -209,7 +238,7 @@ fun SettingsSection(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.15f)
+                containerColor = ThemeUtils.getCardBackground(isDarkMode)
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
@@ -228,7 +257,8 @@ fun SettingsSwitchItem(
     subtitle: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    icon: ImageVector
+    icon: ImageVector,
+    isDarkMode: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -239,7 +269,7 @@ fun SettingsSwitchItem(
         Icon(
             icon,
             contentDescription = null,
-            tint = Color.White.copy(alpha = 0.8f),
+            tint = ThemeUtils.getTextSecondary(isDarkMode),
             modifier = Modifier.size(24.dp)
         )
 
@@ -252,12 +282,12 @@ fun SettingsSwitchItem(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
-                color = Color.White
+                color = ThemeUtils.getTextPrimary(isDarkMode)
             )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.7f)
+                color = ThemeUtils.getTextTertiary(isDarkMode)
             )
         }
 
@@ -265,10 +295,26 @@ fun SettingsSwitchItem(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = Color.White.copy(alpha = 0.3f),
-                uncheckedThumbColor = Color.White.copy(alpha = 0.7f),
-                uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
+                checkedThumbColor = if (isDarkMode) {
+                    Color.White
+                } else {
+                    Color.White
+                },
+                checkedTrackColor = if (isDarkMode) {
+                    Color.White.copy(alpha = 0.25f)
+                } else {
+                    Color.White.copy(alpha = 0.3f)
+                },
+                uncheckedThumbColor = if (isDarkMode) {
+                    Color.White.copy(alpha = 0.6f)
+                } else {
+                    Color.White.copy(alpha = 0.7f)
+                },
+                uncheckedTrackColor = if (isDarkMode) {
+                    Color.White.copy(alpha = 0.08f)
+                } else {
+                    Color.White.copy(alpha = 0.1f)
+                }
             )
         )
     }
@@ -281,7 +327,8 @@ fun SettingsDropdownItem(
     selectedValue: String,
     options: List<String>,
     onValueChange: (String) -> Unit,
-    icon: ImageVector
+    icon: ImageVector,
+    isDarkMode: Boolean
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -294,7 +341,7 @@ fun SettingsDropdownItem(
         Icon(
             icon,
             contentDescription = null,
-            tint = Color.White.copy(alpha = 0.8f),
+            tint = ThemeUtils.getTextSecondary(isDarkMode),
             modifier = Modifier.size(24.dp)
         )
 
@@ -307,22 +354,25 @@ fun SettingsDropdownItem(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
-                color = Color.White
+                color = ThemeUtils.getTextPrimary(isDarkMode)
             )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.7f)
+                color = ThemeUtils.getTextTertiary(isDarkMode)
             )
         }
 
         Box {
             TextButton(onClick = { expanded = true }) {
-                Text(selectedValue, color = Color.White)
+                Text(
+                    selectedValue,
+                    color = ThemeUtils.getTextPrimary(isDarkMode)
+                )
                 Icon(
                     Icons.Default.ArrowDropDown,
                     contentDescription = null,
-                    tint = Color.White
+                    tint = ThemeUtils.getTextPrimary(isDarkMode)
                 )
             }
 
@@ -368,6 +418,7 @@ fun SettingsClickableItem(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    isDarkMode: Boolean,
     onClick: () -> Unit
 ) {
     Row(
@@ -379,7 +430,7 @@ fun SettingsClickableItem(
         Icon(
             icon,
             contentDescription = null,
-            tint = Color.White.copy(alpha = 0.8f),
+            tint = ThemeUtils.getTextSecondary(isDarkMode),
             modifier = Modifier.size(24.dp)
         )
 
@@ -392,12 +443,12 @@ fun SettingsClickableItem(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
-                color = Color.White
+                color = ThemeUtils.getTextPrimary(isDarkMode)
             )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.7f)
+                color = ThemeUtils.getTextTertiary(isDarkMode)
             )
         }
 
@@ -405,7 +456,7 @@ fun SettingsClickableItem(
             Icon(
                 Icons.Default.KeyboardArrowRight,
                 contentDescription = "Open",
-                tint = Color.White.copy(alpha = 0.7f)
+                tint = ThemeUtils.getTextTertiary(isDarkMode)
             )
         }
     }

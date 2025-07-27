@@ -1,4 +1,3 @@
-// Update: presentation/screens/locations/LocationsScreen.kt
 package bhargava.kartik.weatherdashboard.presentation.screens.locations
 
 import androidx.compose.foundation.background
@@ -23,8 +22,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.LocationsViewModel
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.LocationWithWeather
+import bhargava.kartik.weatherdashboard.presentation.viewmodel.SettingsViewModel
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.TemperatureUnit
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.WindSpeedUnit
+import bhargava.kartik.weatherdashboard.utils.ThemeUtils
 import bhargava.kartik.weatherdashboard.utils.formatTemperature
 import bhargava.kartik.weatherdashboard.utils.formatWindSpeed
 
@@ -37,15 +38,17 @@ fun LocationsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
 
+    // Get dark mode state
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+    val isDarkMode = settingsState.darkModeEnabled
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF667eea),
-                        Color(0xFF764ba2)
-                    )
+                    colors = ThemeUtils.getBackgroundGradient(isDarkMode)
                 )
             )
     ) {
@@ -65,20 +68,20 @@ fun LocationsScreen(
                         text = "My Locations",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = ThemeUtils.getTextPrimary(isDarkMode)
                     )
                     Text(
                         text = "${uiState.locations.size} saved locations",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = ThemeUtils.getTextSecondary(isDarkMode)
                     )
                 }
 
                 FloatingActionButton(
                     onClick = { showAddDialog = true },
                     modifier = Modifier.size(56.dp),
-                    containerColor = Color.White.copy(alpha = 0.2f),
-                    contentColor = Color.White
+                    containerColor = ThemeUtils.getControlBackgroundPressed(isDarkMode),
+                    contentColor = ThemeUtils.getTextPrimary(isDarkMode)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Add location")
                 }
@@ -94,7 +97,7 @@ fun LocationsScreen(
                         .padding(bottom = 16.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White.copy(alpha = 0.15f)
+                        containerColor = ThemeUtils.getCardBackground(isDarkMode)
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
@@ -105,20 +108,20 @@ fun LocationsScreen(
                         Icon(
                             Icons.Default.Error,
                             contentDescription = "Error",
-                            tint = Color.White
+                            tint = ThemeUtils.getTextPrimary(isDarkMode)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = error,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White,
+                            color = ThemeUtils.getTextPrimary(isDarkMode),
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(onClick = { viewModel.clearError() }) {
                             Icon(
                                 Icons.Default.Close,
                                 contentDescription = "Dismiss",
-                                tint = Color.White
+                                tint = ThemeUtils.getTextPrimary(isDarkMode)
                             )
                         }
                     }
@@ -134,6 +137,7 @@ fun LocationsScreen(
                         locationWithWeather = locationWithWeather,
                         temperatureUnit = temperatureUnit,
                         windSpeedUnit = windSpeedUnit,
+                        isDarkMode = isDarkMode,
                         onFavoriteClick = {
                             viewModel.toggleFavorite(locationWithWeather.location.id)
                         },
@@ -149,6 +153,7 @@ fun LocationsScreen(
                 // Add location prompt
                 item {
                     AddLocationCard(
+                        isDarkMode = isDarkMode,
                         onClick = { showAddDialog = true }
                     )
                 }
@@ -174,6 +179,7 @@ fun LocationCard(
     locationWithWeather: LocationWithWeather,
     temperatureUnit: TemperatureUnit,
     windSpeedUnit: WindSpeedUnit,
+    isDarkMode: Boolean,
     onFavoriteClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onSetDefaultClick: () -> Unit
@@ -188,9 +194,9 @@ fun LocationCard(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (location.isDefault) {
-                Color.White.copy(alpha = 0.25f)
+                ThemeUtils.getCardBackgroundHighlight(isDarkMode)
             } else {
-                Color.White.copy(alpha = 0.15f)
+                ThemeUtils.getCardBackground(isDarkMode)
             }
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -211,7 +217,7 @@ fun LocationCard(
                     Icon(
                         Icons.Default.LocationOn,
                         contentDescription = "Default location",
-                        tint = Color.White,
+                        tint = ThemeUtils.getTextPrimary(isDarkMode),
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -222,12 +228,12 @@ fun LocationCard(
                         text = location.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium,
-                        color = Color.White
+                        color = ThemeUtils.getTextPrimary(isDarkMode)
                     )
                     Text(
                         text = location.country,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = ThemeUtils.getTextTertiary(isDarkMode)
                     )
                 }
             }
@@ -242,14 +248,14 @@ fun LocationCard(
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             strokeWidth = 2.dp,
-                            color = Color.White
+                            color = ThemeUtils.getTextPrimary(isDarkMode)
                         )
                     }
                     locationWithWeather.hasError -> {
                         Icon(
                             Icons.Default.Error,
                             contentDescription = "Error loading weather",
-                            tint = Color.White,
+                            tint = ThemeUtils.getTextPrimary(isDarkMode),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -271,7 +277,7 @@ fun LocationCard(
                                     text = weather.temperature.formatTemperature(temperatureUnit),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    color = ThemeUtils.getTextPrimary(isDarkMode)
                                 )
                             }
 
@@ -280,14 +286,14 @@ fun LocationCard(
                                 Text(
                                     text = weather.windSpeed.formatWindSpeed(windSpeedUnit),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.7f)
+                                    color = ThemeUtils.getTextTertiary(isDarkMode)
                                 )
                             }
 
                             Text(
                                 text = weather.description,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.7f)
+                                color = ThemeUtils.getTextTertiary(isDarkMode)
                             )
                         }
                     }
@@ -302,7 +308,11 @@ fun LocationCard(
                         Icon(
                             if (location.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Toggle favorite",
-                            tint = if (location.isFavorite) Color.Red.copy(alpha = 0.8f) else Color.White.copy(alpha = 0.7f),
+                            tint = if (location.isFavorite) {
+                                Color.Red.copy(alpha = 0.8f)
+                            } else {
+                                ThemeUtils.getTextTertiary(isDarkMode)
+                            },
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -315,7 +325,7 @@ fun LocationCard(
                             Icon(
                                 Icons.Default.Delete,
                                 contentDescription = "Delete location",
-                                tint = Color.White.copy(alpha = 0.7f),
+                                tint = ThemeUtils.getTextTertiary(isDarkMode),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -328,6 +338,7 @@ fun LocationCard(
 
 @Composable
 fun AddLocationCard(
+    isDarkMode: Boolean,
     onClick: () -> Unit
 ) {
     Card(
@@ -336,7 +347,11 @@ fun AddLocationCard(
             .clickable { onClick() },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.1f)
+            containerColor = if (isDarkMode) {
+                Color.White.copy(alpha = 0.05f) // Even more subtle in dark mode
+            } else {
+                Color.White.copy(alpha = 0.1f)
+            }
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -350,13 +365,13 @@ fun AddLocationCard(
             Icon(
                 Icons.Default.Add,
                 contentDescription = "Add location",
-                tint = Color.White
+                tint = ThemeUtils.getTextPrimary(isDarkMode)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Add New Location",
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White
+                color = ThemeUtils.getTextPrimary(isDarkMode)
             )
         }
     }

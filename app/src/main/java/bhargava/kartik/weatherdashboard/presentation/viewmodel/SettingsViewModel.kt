@@ -1,4 +1,3 @@
-// Update: presentation/viewmodel/SettingsViewModel.kt
 package bhargava.kartik.weatherdashboard.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel

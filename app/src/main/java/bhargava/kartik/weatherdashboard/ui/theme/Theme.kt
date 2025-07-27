@@ -1,4 +1,3 @@
-// Update: ui/theme/Theme.kt
 package bhargava.kartik.weatherdashboard.ui.theme
 
 import android.app.Activity

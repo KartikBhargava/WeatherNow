@@ -1,4 +1,3 @@
-// Create: di/NetworkModule.kt
 package bhargava.kartik.weatherdashboard.di
 
 import bhargava.kartik.weatherdashboard.data.remote.api.WeatherApiService

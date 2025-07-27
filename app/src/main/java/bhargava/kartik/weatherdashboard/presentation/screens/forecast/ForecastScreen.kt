@@ -1,4 +1,3 @@
-// Update: presentation/screens/forecast/ForecastScreen.kt
 package bhargava.kartik.weatherdashboard.presentation.screens.forecast
 
 import androidx.compose.foundation.background
@@ -25,8 +24,10 @@ import bhargava.kartik.weatherdashboard.domain.model.DailyForecast
 import bhargava.kartik.weatherdashboard.domain.model.HourlyForecast
 import bhargava.kartik.weatherdashboard.domain.model.WeatherForecast
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.ForecastViewModel
+import bhargava.kartik.weatherdashboard.presentation.viewmodel.SettingsViewModel
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.TemperatureUnit
 import bhargava.kartik.weatherdashboard.presentation.viewmodel.WindSpeedUnit
+import bhargava.kartik.weatherdashboard.utils.ThemeUtils
 import bhargava.kartik.weatherdashboard.utils.formatTemperature
 import bhargava.kartik.weatherdashboard.utils.formatWindSpeed
 
@@ -38,15 +39,17 @@ fun ForecastScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // Get dark mode state
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val settingsState by settingsViewModel.uiState.collectAsStateWithLifecycle()
+    val isDarkMode = settingsState.darkModeEnabled
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF667eea),
-                        Color(0xFF764ba2)
-                    )
+                    colors = ThemeUtils.getBackgroundGradient(isDarkMode)
                 )
             )
     ) {
@@ -66,12 +69,12 @@ fun ForecastScreen(
                         text = "Weather Forecast",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = ThemeUtils.getTextPrimary(isDarkMode)
                     )
                     Text(
                         text = uiState.forecast?.cityName ?: "Loading...",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = ThemeUtils.getTextSecondary(isDarkMode)
                     )
                 }
 
@@ -80,14 +83,14 @@ fun ForecastScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .background(
-                            Color.White.copy(alpha = 0.15f),
+                            ThemeUtils.getControlBackground(isDarkMode),
                             RoundedCornerShape(12.dp)
                         )
                 ) {
                     Icon(
                         Icons.Default.Refresh,
                         contentDescription = "Refresh forecast",
-                        tint = Color.White,
+                        tint = ThemeUtils.getTextPrimary(isDarkMode),
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -97,11 +100,12 @@ fun ForecastScreen(
 
             when {
                 uiState.isLoading -> {
-                    LoadingForecastContent()
+                    LoadingForecastContent(isDarkMode)
                 }
                 uiState.errorMessage != null -> {
                     ErrorForecastContent(
                         message = uiState.errorMessage!!,
+                        isDarkMode = isDarkMode,
                         onRetryClick = { viewModel.refreshForecast() }
                     )
                 }
@@ -109,7 +113,8 @@ fun ForecastScreen(
                     ForecastContent(
                         forecast = uiState.forecast!!,
                         temperatureUnit = temperatureUnit,
-                        windSpeedUnit = windSpeedUnit
+                        windSpeedUnit = windSpeedUnit,
+                        isDarkMode = isDarkMode
                     )
                 }
             }
@@ -118,12 +123,12 @@ fun ForecastScreen(
 }
 
 @Composable
-fun LoadingForecastContent() {
+fun LoadingForecastContent(isDarkMode: Boolean) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.15f)
+            containerColor = ThemeUtils.getCardBackground(isDarkMode)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -137,13 +142,13 @@ fun LoadingForecastContent() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 CircularProgressIndicator(
-                    color = Color.White,
+                    color = ThemeUtils.getTextPrimary(isDarkMode),
                     strokeWidth = 3.dp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Loading forecast data...",
-                    color = Color.White.copy(alpha = 0.8f),
+                    color = ThemeUtils.getTextSecondary(isDarkMode),
                     fontSize = 16.sp
                 )
             }
@@ -154,13 +159,14 @@ fun LoadingForecastContent() {
 @Composable
 fun ErrorForecastContent(
     message: String,
+    isDarkMode: Boolean,
     onRetryClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.15f)
+            containerColor = ThemeUtils.getCardBackground(isDarkMode)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -178,7 +184,7 @@ fun ErrorForecastContent(
             Text(
                 text = "Forecast Unavailable",
                 style = MaterialTheme.typography.titleLarge,
-                color = Color.White,
+                color = ThemeUtils.getTextPrimary(isDarkMode),
                 fontWeight = FontWeight.Bold
             )
 
@@ -187,7 +193,7 @@ fun ErrorForecastContent(
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.8f)
+                color = ThemeUtils.getTextSecondary(isDarkMode)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -195,11 +201,11 @@ fun ErrorForecastContent(
             Button(
                 onClick = onRetryClick,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.2f)
+                    containerColor = ThemeUtils.getControlBackgroundPressed(isDarkMode)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Retry", color = Color.White)
+                Text("Retry", color = ThemeUtils.getTextPrimary(isDarkMode))
             }
         }
     }
@@ -209,7 +215,8 @@ fun ErrorForecastContent(
 fun ForecastContent(
     forecast: WeatherForecast,
     temperatureUnit: TemperatureUnit,
-    windSpeedUnit: WindSpeedUnit
+    windSpeedUnit: WindSpeedUnit,
+    isDarkMode: Boolean
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -218,7 +225,8 @@ fun ForecastContent(
         item {
             HourlyForecastSection(
                 hourlyForecasts = forecast.hourlyForecasts,
-                temperatureUnit = temperatureUnit
+                temperatureUnit = temperatureUnit,
+                isDarkMode = isDarkMode
             )
         }
 
@@ -228,7 +236,7 @@ fun ForecastContent(
                 text = "5-Day Forecast",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = ThemeUtils.getTextPrimary(isDarkMode),
                 modifier = Modifier.padding(vertical = 8.dp)
             )
         }
@@ -239,6 +247,7 @@ fun ForecastContent(
                 dailyForecast = dailyForecast,
                 temperatureUnit = temperatureUnit,
                 windSpeedUnit = windSpeedUnit,
+                isDarkMode = isDarkMode,
                 isToday = dailyForecast.dayName == "Today"
             )
         }
@@ -248,14 +257,15 @@ fun ForecastContent(
 @Composable
 fun HourlyForecastSection(
     hourlyForecasts: List<HourlyForecast>,
-    temperatureUnit: TemperatureUnit
+    temperatureUnit: TemperatureUnit,
+    isDarkMode: Boolean
 ) {
     Column {
         Text(
             text = "24-Hour Forecast",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = ThemeUtils.getTextPrimary(isDarkMode),
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
@@ -263,7 +273,7 @@ fun HourlyForecastSection(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.15f)
+                containerColor = ThemeUtils.getCardBackground(isDarkMode)
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
@@ -274,7 +284,8 @@ fun HourlyForecastSection(
                 items(hourlyForecasts) { hourlyForecast ->
                     HourlyForecastItem(
                         hourlyForecast = hourlyForecast,
-                        temperatureUnit = temperatureUnit
+                        temperatureUnit = temperatureUnit,
+                        isDarkMode = isDarkMode
                     )
                 }
             }
@@ -285,7 +296,8 @@ fun HourlyForecastSection(
 @Composable
 fun HourlyForecastItem(
     hourlyForecast: HourlyForecast,
-    temperatureUnit: TemperatureUnit
+    temperatureUnit: TemperatureUnit,
+    isDarkMode: Boolean
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -294,7 +306,7 @@ fun HourlyForecastItem(
         Text(
             text = hourlyForecast.hour,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.7f)
+            color = ThemeUtils.getTextTertiary(isDarkMode)
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -310,14 +322,14 @@ fun HourlyForecastItem(
             text = hourlyForecast.temperature.formatTemperature(temperatureUnit),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = ThemeUtils.getTextPrimary(isDarkMode)
         )
 
         if (hourlyForecast.precipitationChance > 0) {
             Text(
                 text = "${hourlyForecast.precipitationChance}%",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.8f)
+                color = ThemeUtils.getTextSecondary(isDarkMode)
             )
         }
     }
@@ -328,6 +340,7 @@ fun DailyForecastCard(
     dailyForecast: DailyForecast,
     temperatureUnit: TemperatureUnit,
     windSpeedUnit: WindSpeedUnit,
+    isDarkMode: Boolean,
     isToday: Boolean = false
 ) {
     Card(
@@ -335,9 +348,9 @@ fun DailyForecastCard(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isToday) {
-                Color.White.copy(alpha = 0.25f)
+                ThemeUtils.getCardBackgroundHighlight(isDarkMode)
             } else {
-                Color.White.copy(alpha = 0.15f)
+                ThemeUtils.getCardBackground(isDarkMode)
             }
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -357,12 +370,12 @@ fun DailyForecastCard(
                     text = dailyForecast.dayName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-                    color = Color.White
+                    color = ThemeUtils.getTextPrimary(isDarkMode)
                 )
                 Text(
                     text = formatDate(dailyForecast.date),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = ThemeUtils.getTextTertiary(isDarkMode)
                 )
             }
 
@@ -378,7 +391,7 @@ fun DailyForecastCard(
                 Text(
                     text = dailyForecast.description.replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = ThemeUtils.getTextTertiary(isDarkMode)
                 )
             }
 
@@ -394,12 +407,12 @@ fun DailyForecastCard(
                         text = dailyForecast.maxTemp.formatTemperature(temperatureUnit),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = ThemeUtils.getTextPrimary(isDarkMode)
                     )
                     Text(
                         text = "/${dailyForecast.minTemp.formatTemperature(temperatureUnit)}",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = ThemeUtils.getTextTertiary(isDarkMode)
                     )
                 }
 
@@ -412,12 +425,12 @@ fun DailyForecastCard(
                             Icons.Default.WaterDrop,
                             contentDescription = null,
                             modifier = Modifier.size(12.dp),
-                            tint = Color.White.copy(alpha = 0.8f)
+                            tint = ThemeUtils.getTextSecondary(isDarkMode)
                         )
                         Text(
                             text = "${dailyForecast.precipitationChance}%",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = ThemeUtils.getTextSecondary(isDarkMode)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
@@ -426,12 +439,12 @@ fun DailyForecastCard(
                         Icons.Default.Air,
                         contentDescription = null,
                         modifier = Modifier.size(12.dp),
-                        tint = Color.White.copy(alpha = 0.8f)
+                        tint = ThemeUtils.getTextSecondary(isDarkMode)
                     )
                     Text(
                         text = dailyForecast.windSpeed.formatWindSpeed(windSpeedUnit),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.8f)
+                        color = ThemeUtils.getTextSecondary(isDarkMode)
                     )
                 }
             }

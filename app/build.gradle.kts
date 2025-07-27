@@ -22,7 +22,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // SECURITY: Move API key to local.properties for production
-        buildConfigField("String", "WEATHER_API_KEY", "\"d6ede143692ec34b4534e9a08e929e9e\"")
+        buildConfigField("String", "WEATHER_API_KEY", "\"${project.findProperty("WEATHER_API_KEY") ?: ""}\"")
 
         // Optimize for Play Store
         vectorDrawables {
